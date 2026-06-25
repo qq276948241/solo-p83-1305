@@ -40,6 +40,7 @@ func main() {
 
 		sortingH := handler.SortingHandler{DB: db}
 		api.GET("/sorting/summary", sortingH.Summary)
+		api.GET("/sorting/export", sortingH.Export)
 
 		pickupH := handler.PickupHandler{DB: db}
 		api.GET("/pickup/slips", pickupH.List)
