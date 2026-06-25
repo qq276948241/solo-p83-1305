@@ -5,26 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"groupbuy/service"
 )
 
 type SupplierHandler struct {
 	DB *gorm.DB
-}
-
-type SupplierReconciliation struct {
-	SupplierID   uint64  `json:"supplier_id"`
-	SupplierName string  `json:"supplier_name"`
-	StallNumber  string  `json:"stall_number"`
-	TotalAmount  float64 `json:"total_amount"`
-	TotalQty     uint32  `json:"total_qty"`
-	Details      []SupplierDetail `json:"details"`
-}
-
-type SupplierDetail struct {
-	ProductID   uint64  `json:"product_id"`
-	ProductName string  `json:"product_name"`
-	Quantity    uint32  `json:"quantity"`
-	TotalAmount float64 `json:"total_amount"`
 }
 
 func (h *SupplierHandler) Reconciliation(c *gin.Context) {
@@ -34,49 +19,10 @@ func (h *SupplierHandler) Reconciliation(c *gin.Context) {
 		return
 	}
 
-	type productAgg struct {
-		ProductID   uint64
-		TotalQty    uint32
-		TotalAmount float64
-	}
-
-	var aggs []productAgg
-	h.DB.Table("orders").
-		Select("product_id, SUM(quantity) as total_qty, SUM(total_price) as total_amount").
-		Where("order_date = ?", date).
-		Group("product_id").
-		Scan(&aggs)
-
-	supplierMap := make(map[uint64]*SupplierReconciliation)
-
-	for _, agg := range aggs {
-		var productName string
-		var supplierID uint64
-		h.DB.Table("products").Select("name, supplier_id").Where("id = ?", agg.ProductID).Row().Scan(&productName, &supplierID)
-
-		if supplierMap[supplierID] == nil {
-			var sName, sStall string
-			h.DB.Table("suppliers").Select("name, stall_number").Where("id = ?", supplierID).Row().Scan(&sName, &sStall)
-			supplierMap[supplierID] = &SupplierReconciliation{
-				SupplierID:   supplierID,
-				SupplierName: sName,
-				StallNumber:  sStall,
-			}
-		}
-
-		supplierMap[supplierID].TotalAmount += agg.TotalAmount
-		supplierMap[supplierID].TotalQty += agg.TotalQty
-		supplierMap[supplierID].Details = append(supplierMap[supplierID].Details, SupplierDetail{
-			ProductID:   agg.ProductID,
-			ProductName: productName,
-			Quantity:    agg.TotalQty,
-			TotalAmount: agg.TotalAmount,
-		})
-	}
-
-	var results []SupplierReconciliation
-	for _, v := range supplierMap {
-		results = append(results, *v)
+	results, err := service.CalcReconciliation(h.DB, date)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "对账查询失败"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"date": date, "data": results})
