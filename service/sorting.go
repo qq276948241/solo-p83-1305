@@ -5,6 +5,7 @@ import (
 
 	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
+	"groupbuy/model"
 )
 
 type ExportRow struct {
@@ -24,7 +25,7 @@ func GeneratePickupExcel(db *gorm.DB, date string) (*excelize.File, error) {
 			"SUM(orders.quantity) as total_qty").
 		Joins("LEFT JOIN pickup_points ON pickup_points.id = orders.pickup_point_id").
 		Joins("LEFT JOIN products ON products.id = orders.product_id").
-		Where("orders.order_date = ? AND orders.status IN ?", date, []int8{1, 2}).
+		Where("orders.order_date = ? AND orders.status IN ?", date, model.ValidOrderStatuses()).
 		Group("orders.pickup_point_id, orders.product_id").
 		Order("orders.pickup_point_id").
 		Scan(&rows).Error

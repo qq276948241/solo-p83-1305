@@ -6,6 +6,17 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	StatusPending   int8 = 1
+	StatusSorted    int8 = 2
+	StatusPickedUp  int8 = 3
+	StatusCancelled int8 = 4
+)
+
+func ValidOrderStatuses() []int8 {
+	return []int8{StatusPending, StatusSorted, StatusPickedUp}
+}
+
 type Supplier struct {
 	ID          uint64         `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name        string         `gorm:"type:varchar(100);not null" json:"name"`

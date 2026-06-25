@@ -91,7 +91,7 @@ func (h *OrderHandler) List(c *gin.Context) {
 func (h *OrderHandler) UpdateStatus(c *gin.Context) {
 	id := c.Param("id")
 	var body struct {
-		Status int8 `json:"status" binding:"required,oneof=1 2 3"`
+		Status int8 `json:"status" binding:"required,oneof=1 2 3 4"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

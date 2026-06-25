@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
@@ -15,6 +17,9 @@ import (
 )
 
 func main() {
+	os.Setenv("TZ", "Asia/Shanghai")
+	time.Local = mustLoadLocation("Asia/Shanghai")
+
 	cfg := config.Load()
 
 	db, err := gorm.Open(mysql.Open(cfg.DSN()), &gorm.Config{})
@@ -57,4 +62,12 @@ func main() {
 	if err := r.Run(addr); err != nil {
 		log.Fatalf("服务启动失败: %v", err)
 	}
+}
+
+func mustLoadLocation(name string) *time.Location {
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		log.Fatalf("加载时区 %s 失败: %v", name, err)
+	}
+	return loc
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"gorm.io/gorm"
+	"groupbuy/model"
 )
 
 type SupplierReconciliation struct {
@@ -30,7 +31,7 @@ func CalcReconciliation(db *gorm.DB, date string) ([]SupplierReconciliation, err
 	var aggs []productAgg
 	if err := db.Table("orders").
 		Select("product_id, SUM(quantity) as total_qty, SUM(total_price) as total_amount").
-		Where("order_date = ?", date).
+		Where("order_date = ? AND status IN ?", date, model.ValidOrderStatuses()).
 		Group("product_id").
 		Scan(&aggs).Error; err != nil {
 		return nil, err
